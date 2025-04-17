@@ -9,16 +9,17 @@ import DashboardView from '@/views/dashboard/DashboardView.vue'
 import HomeAbout from '@/views/homeview/HomeAbout.vue'
 import HomeContent from '@/views/homeview/HomeContent.vue'
 import DailyLogs from '@/views/dashboard/dailylogs/DailyLogs.vue'
+import CreateLogs from '@/views/dashboard/dailylogs/CreateLogs.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/home',
+      path: '/',
       component: HomeViewLayout,
       children: [
         {
-          path: '',
+          path: '/home',
           name: 'home',
           component: HomeContent,
         },
@@ -58,6 +59,11 @@ const router = createRouter({
           path: '/dailylog',
           name: 'dailylog',
           component: DailyLogs
+        },
+        {
+          path: '/createlog',
+          name: 'createlog',
+          component: CreateLogs
         },
       ],
     },
