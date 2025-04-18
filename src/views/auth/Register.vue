@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthLayout from '@/components/auth/AuthLayout.vue'
 import AuthForm from '@/components/auth/AuthForm.vue'
+import { supabase } from '@/supabase'
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -84,20 +85,37 @@ const handleRegister = async () => {
   if (!validateForm()) return
 
   isLoading.value = true
+  errors.value.apiError = ''
+
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const { data, error } = await supabase.auth.signUp({
+      email: form.value.email,
+      password: form.value.password,
+      options: {
+        data: {
+          full_name: form.value.name,
+          role: form.value.role
+        }
+      }
+    })
 
-    // In a real app, you would call your API here:
-    // const response = await authService.register(form.value)
+    if (error) throw error
 
-    console.log('Registration successful', form.value)
-    router.push('/dashboard')
+    if (data.user?.identities?.length === 0) {
+      throw new Error('Email already registered')
+    }
+
+    if (data.user && !data.user.confirmed_at) {
+      router.push({
+        path: '/verify-email',
+        query: { email: form.value.email }
+      })
+    } else {
+      router.push('/dashboard')
+    }
   } catch (error) {
-    console.error('Registration failed:', error)
-    // Handle API errors (e.g., email already exists)
-    errors.value.apiError =
-      error.response?.data?.message || 'Registration failed. Please try again.'
+    console.error('Registration error:', error)
+    errors.value.apiError = error.message || 'Registration failed. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -186,7 +204,6 @@ const handleRegister = async () => {
               :class="{ 'border-red-500': errors.password }"
               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
-            <!-- In the password field -->
             <button
               type="button"
               @click="showPassword = !showPassword"

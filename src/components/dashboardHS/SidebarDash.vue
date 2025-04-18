@@ -1,4 +1,5 @@
 <script setup>
+import { supabase } from '@/supabase';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -17,11 +18,17 @@ const toggleDropdown = (tab) => {
   activeTab.value = activeTab.value === tab ? null : tab;
 };
 
-const handleLogout = () => {
-  // Add your actual logout logic here
-  console.log('Logging out...');
-  router.push('/login');
-};
+const isLoggingOut = ref(false)
+
+const handleLogout = async () => {
+  isLoggingOut.value = true
+  try {
+    await supabase.auth.signOut()
+    // ... rest of logout logic
+  } finally {
+    isLoggingOut.value = false
+  }
+}
 </script>
 
 <template>

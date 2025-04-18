@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthLayout from '@/components/auth/AuthLayout.vue'
 import AuthForm from '@/components/auth/AuthForm.vue'
+import { supabase } from '@/supabase'
 
 const router = useRouter()
 const form = ref({
@@ -44,6 +45,23 @@ const handleLogin = async () => {
   apiError.value = ''
 
   try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: form.value.email,
+      password: form.value.password
+    });
+
+    if(error) throw error;
+
+    const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+    console.log('Login Succesfuly:', profile)
+    router.push(profile.role === 'admin'? '/admin' : '/dashboard');
+
+    
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500))
     
