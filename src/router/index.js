@@ -17,6 +17,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/home'
+    },
+    {
+      path: '/',
       component: HomeViewLayout,
       children: [
         {
