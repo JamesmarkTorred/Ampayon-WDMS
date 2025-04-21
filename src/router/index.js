@@ -11,6 +11,7 @@ import HomeContent from '@/views/homeview/HomeContent.vue'
 import DailyLogs from '@/views/dashboard/dailylogs/DailyLogs.vue'
 import CreateLogs from '@/views/dashboard/dailylogs/CreateLogs.vue'
 import { supabase } from '@/supabase'
+import ShowLog from '@/views/dashboard/dailylogs/ShowLog.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +70,11 @@ const router = createRouter({
           path: '/createlog',
           name: 'createlog',
           component: CreateLogs,
+        },
+        {
+          path: '/showlog',
+          name: 'showlog',
+          component: ShowLog,
         },
       ],
     },

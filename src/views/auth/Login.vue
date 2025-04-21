@@ -45,35 +45,57 @@ const handleLogin = async () => {
   apiError.value = ''
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // 1. Authenticate user with email/password
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: form.value.email,
       password: form.value.password
-    });
+    })
 
-    if(error) throw error;
+    if (authError) throw authError
+    if (!authData.user) throw new Error('No user returned from authentication')
 
-    const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
+    // 2. Fetch user profile - using .maybeSingle() for safety
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .eq('id', authData.user.id)
+      .maybeSingle() // Returns null instead of error if no rows
 
-    console.log('Login Succesfuly:', profile)
-    router.push(profile.role === 'admin'? '/admin' : '/dashboard');
+    if (profileError) throw profileError
+    if (!profile) {
+      // If no profile exists, create one with default role
+      const { error: upsertError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          email: authData.user.email,
+          role: 'user', // Default role
+          full_name: authData.user.user_metadata?.full_name || ''
+        })
 
+      if (upsertError) throw upsertError
+      router.push('/dashboard')
+      return
+    }
+
+    console.log('Login successful. User role:', profile.role)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // In a real app, you would call your authentication API here
-    // const response = await authService.login(form.value)
-    // if (!response.success) throw new Error(response.message)
-    
-    console.log('Login successful', form.value.email)
-    router.push('/dashboard')
+    // 3. Redirect based on role with fallback
+    const redirectPath = profile?.role === 'admin' ? '/admin' : '/dashboard'
+    router.push(redirectPath)
+
   } catch (error) {
-    console.error('Login failed:', error)
-    apiError.value = error.message || 'Login failed. Please check your credentials.'
+    console.error('Login error:', error)
+    
+    // Handle specific error cases
+    if (error.message.includes('JSON object requested, multiple')) {
+      apiError.value = 'Account configuration error. Please contact support.'
+      console.error('Multiple profiles found for user. Database integrity issue.')
+    } else if (error.message.includes('Invalid login credentials')) {
+      apiError.value = 'Invalid email or password'
+    } else {
+      apiError.value = error.message || 'Login failed. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -95,10 +117,16 @@ const handleLogin = async () => {
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
           <div class="mt-1">
-            <input id="email" name="email" type="email" autocomplete="email" required
-                   v-model="form.email"
-                   :class="{'border-red-500': errors.email}"
-                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <input 
+              id="email" 
+              name="email" 
+              type="email" 
+              autocomplete="email" 
+              required
+              v-model="form.email"
+              :class="{'border-red-500': errors.email}"
+              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
           </div>
           <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
         </div>
@@ -107,15 +135,21 @@ const handleLogin = async () => {
         <div>
           <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
           <div class="mt-1 relative">
-            <input :id="`password`" :name="`password`" 
-                   :type="showPassword ? 'text' : 'password'" 
-                   autocomplete="current-password" required
-                   v-model="form.password"
-                   :class="{'border-red-500': errors.password}"
-                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-            <button type="button" 
-                    @click="showPassword = !showPassword"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+            <input 
+              :id="`password`" 
+              :name="`password`" 
+              :type="showPassword ? 'text' : 'password'" 
+              autocomplete="current-password" 
+              required
+              v-model="form.password"
+              :class="{'border-red-500': errors.password}"
+              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+            <button 
+              type="button" 
+              @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
               <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
                 <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
@@ -128,8 +162,6 @@ const handleLogin = async () => {
           </div>
           <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
         </div>
-
-        
 
         <!-- API Error Message -->
         <div v-if="apiError" class="rounded-md bg-red-50 p-4 mt-4">

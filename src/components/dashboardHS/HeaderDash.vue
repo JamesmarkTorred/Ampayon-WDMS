@@ -1,11 +1,12 @@
-
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { supabase } from '@/supabase'; // Make sure to import if using Supabase
 
 const router = useRouter();
 const activeDropdown = ref(null);
 const notificationTab = ref('notifications');
+const recentSearches = ref([]); // For search functionality
 
 const toggleDropdown = (dropdown) => {
   activeDropdown.value = activeDropdown.value === dropdown ? null : dropdown;
@@ -15,10 +16,17 @@ const closeDropdowns = () => {
   activeDropdown.value = null;
 };
 
-const handleLogout = () => {
-  // Add your logout logic here
-  console.log('Logging out...');
-  router.push('/login');
+const handleLogout = async () => {
+  try {
+    // Example with Supabase - adjust for your auth system
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
+    router.push('/login');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    // Consider adding user feedback here
+  }
 };
 
 onMounted(() => {
@@ -37,6 +45,7 @@ onMounted(() => {
   <div class="py-2 px-6 bg-white flex items-center shadow-md shadow-black/5 sticky top-0 left-0 z-30">
     <button 
       type="button" 
+      aria-label="Toggle sidebar"
       class="text-lg text-gray-600 sidebar-toggle" 
       @click="$emit('toggle-sidebar')"
     >
@@ -48,12 +57,11 @@ onMounted(() => {
       <li class="mr-2">
         <router-link to="/" class="text-gray-400 hover:text-gray-600 font-medium">Weighbridge DMS</router-link>
       </li>
-      
     </ul>
     
     <!-- Right side icons -->
     <ul class="ml-auto flex items-center">
-      <!-- Search Dropdown -->
+      <!-- Search Dropdown - Preserved as requested -->
       <li class="mr-1 dropdown">
         <button 
           type="button" 
@@ -93,10 +101,7 @@ onMounted(() => {
         </div>
       </li>
       
-      <!-- Notifications Dropdown -->
-      
-      
-      <!-- Profile Dropdown -->
+      <!-- Profile Dropdown - Preserved as requested -->
       <li class="dropdown ml-3">
         <button 
           type="button" 
@@ -104,7 +109,7 @@ onMounted(() => {
           @click.stop="toggleDropdown('profile')"
         >
           <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-medium">
-           <i class="ri-user-line mr-05"></i>
+            <i class="ri-user-line"></i>
           </div>
         </button>
         <ul 
