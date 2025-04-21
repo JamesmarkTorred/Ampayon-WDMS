@@ -94,9 +94,9 @@ const handleRegister = async () => {
       options: {
         data: {
           full_name: form.value.name,
-          role: form.value.role
-        }
-      }
+          role: form.value.role,
+        },
+      },
     })
 
     if (error) throw error
@@ -108,7 +108,7 @@ const handleRegister = async () => {
     if (data.user && !data.user.confirmed_at) {
       router.push({
         path: '/verify-email',
-        query: { email: form.value.email }
+        query: { email: form.value.email },
       })
     } else {
       router.push('/dashboard')

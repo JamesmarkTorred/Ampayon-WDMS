@@ -12,6 +12,7 @@ import DailyLogs from '@/views/dashboard/dailylogs/DailyLogs.vue'
 import CreateLogs from '@/views/dashboard/dailylogs/CreateLogs.vue'
 import { supabase } from '@/supabase'
 import ShowLog from '@/views/dashboard/dailylogs/ShowLog.vue'
+import VerifyEmail from '@/views/auth/VerifyEmail.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -48,6 +49,11 @@ const router = createRouter({
           path: '/forgot-password',
           name: 'forgotPassword',
           component: ForgotPassword,
+        },
+        {
+          path: '/verify-email',
+          name: 'verifyEmail',
+          component: VerifyEmail,
         },
       ],
     },
