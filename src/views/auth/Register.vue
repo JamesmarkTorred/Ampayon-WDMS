@@ -111,7 +111,7 @@ const handleRegister = async () => {
         query: { email: form.value.email },
       })
     } else {
-      router.push('/dashboard')
+      router.push('/login')
     }
   } catch (error) {
     console.error('Registration error:', error)
