@@ -1,8 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 
+const route = useRoute()
 const router = useRouter()
 
 // Form data
@@ -40,15 +41,30 @@ const form = ref({
 const errors = ref([])
 const isLoading = ref(false)
 const userProfile = ref(null)
+const logId = ref(null)
 
-// Initialize form with current date and user profile
+// GVW mapping based on truck type
+const gvwMapping = {
+  '1-1': 15000,
+  '1-2': 25000,
+  '1-3': 35000,
+  '11-1': 30000,
+  '11-2': 40000,
+  '11-3': 50000,
+  '12-1': 35000,
+  '12-2': 45000,
+  '12-3': 55000,
+  '11-11': 45000,
+  '11-12': 55000,
+  '12-11': 50000,
+  '12-12': 60000,
+}
+
+// Initialize form with existing log data
 onMounted(async () => {
-  const today = new Date()
-  form.value.date = today.toISOString().split('T')[0]
-  form.value.time = today.toTimeString().substring(0, 5)
-
-  // Load user profile
+  logId.value = route.params.id
   await loadUserProfile()
+  await fetchLogData()
 })
 
 // Load user profile data
@@ -72,21 +88,35 @@ const loadUserProfile = async () => {
   }
 }
 
-// GVW mapping based on truck type
-const gvwMapping = {
-  '1-1': 15000,
-  '1-2': 25000,
-  '1-3': 35000,
-  '11-1': 30000,
-  '11-2': 40000,
-  '11-3': 50000,
-  '12-1': 35000,
-  '12-2': 45000,
-  '12-3': 55000,
-  '11-11': 45000,
-  '11-12': 55000,
-  '12-11': 50000,
-  '12-12': 60000,
+// Fetch existing log data
+const fetchLogData = async () => {
+  try {
+    isLoading.value = true
+    const { data, error } = await supabase
+      .from('truck_logs')
+      .select('*')
+      .eq('id', logId.value)
+      .single()
+
+    if (error) throw error
+    if (!data) throw new Error('Log not found')
+
+    // Map the fetched data to our form
+    Object.keys(form.value).forEach(key => {
+      if (data[key] !== undefined) {
+        form.value[key] = data[key]
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching log:', error)
+    errors.value.push({
+      field: 'general',
+      message: error.message || 'Failed to load log data'
+    })
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const updateGVW = () => {
@@ -195,8 +225,8 @@ const submitForm = async () => {
     } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('Authentication required')
 
-    // Prepare submission data
-    const submissionData = {
+    // Prepare update data
+    const updateData = {
       ...form.value,
       // Convert numeric fields
       first_axle: Number(form.value.first_axle),
@@ -212,21 +242,26 @@ const submitForm = async () => {
       excess_load: Number(form.value.excess_load),
       excess_gvw: Number(form.value.excess_gvw),
       overloaded_axles: Number(form.value.overloaded_axles),
-      created_by: user.id,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
     }
 
-    // Insert into truck_logs
-    const { data, error } = await supabase.from('truck_logs').insert([submissionData]).select()
+    // Update the truck_log
+    const { data, error } = await supabase
+      .from('truck_logs')
+      .update(updateData)
+      .eq('id', logId.value)
+      .select()
 
     if (error) throw error
 
     // Success - redirect to logs view
-    router.push('/dailylog')
+    router.push({ name: 'logs' })
   } catch (error) {
-    console.error('Submission error:', error)
+    console.error('Update error:', error)
     errors.value.push({
       field: 'general',
-      message: error.message || 'Failed to save log. Please try again.',
+      message: error.message || 'Failed to update log. Please try again.',
     })
   } finally {
     isLoading.value = false
@@ -242,11 +277,12 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
     <!-- Header Section -->
     <div class="flex flex-wrap justify-between items-center mb-6">
       <div class="w-full md:w-auto mb-4 md:mb-0">
-        <h2 class="text-2xl font-bold">Create log</h2>
+        <h2 class="text-2xl font-bold">Edit Log</h2>
+        <p class="text-sm text-gray-500">Editing log ID: {{ logId }}</p>
       </div>
       <div class="w-full md:w-auto">
         <router-link
-          to="/logs"
+          :to="{ name: 'logs' }"
           class="inline-flex items-center px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors"
         >
           <i class="fas fa-arrow-left mr-2"></i> Back
@@ -262,12 +298,17 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
       <div class="font-bold">Whoops!</div>
       <p>There were some problems with your input.</p>
       <ul class="list-disc pl-5 mt-2">
-        <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
+        <li v-for="(error, index) in errors" :key="index">{{ error.message }}</li>
       </ul>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="isLoading" class="flex justify-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
     <!-- Form -->
-    <form @submit.prevent="submitForm" class="space-y-6">
+    <form v-else @submit.prevent="submitForm" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Truck Data Information (Left) -->
         <section class="bg-white p-6 rounded-lg shadow">
@@ -335,7 +376,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="text"
                 id="driver_otp"
                 v-model="form.driver_otp"
-                required
                 :class="{ 'border-red-500': hasError('driver_otp') }"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -389,7 +429,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="text"
                 id="lto_cr"
                 v-model="form.lto_cr"
-                required
                 :class="{ 'border-red-500': hasError('lto_cr') }"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -407,7 +446,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="date"
                 id="lto_or"
                 v-model="form.lto_or"
-                required
                 :class="{ 'border-red-500': hasError('lto_or') }"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -476,7 +514,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="text"
                 id="commodity_type"
                 v-model="form.commodity_type"
-                required
                 :class="{ 'border-red-500': hasError('commodity_type') }"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -538,7 +575,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                   type="number"
                   v-model="form.first_axle"
                   placeholder="1st Axle"
-                  required
                   @input="calculateTotalWeight"
                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -603,7 +639,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="number"
                 id="total_weight"
                 v-model="form.total_weight"
-                required
                 readonly
                 class="w-full px-3 py-2 border rounded-md bg-gray-100"
               />
@@ -660,7 +695,6 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
                 type="number"
                 id="overloaded_axles"
                 v-model="form.overloaded_axles"
-                required
                 :class="{ 'border-red-500': hasError('overloaded_axles') }"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -719,14 +753,21 @@ const getError = (field) => errors.value.find((e) => e.field === field)?.message
         <button
           type="submit"
           class="inline-flex items-center px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+          :disabled="isLoading"
         >
-          <i class="fas fa-save mr-2"></i> Save Log
+          <span v-if="isLoading" class="mr-2">
+            <i class="fas fa-spinner fa-spin"></i>
+          </span>
+          <span v-else class="mr-2">
+            <i class="fas fa-save"></i>
+          </span>
+          Update Log
         </button>
       </div>
     </form>
   </div>
 </template>
 
-<style>
-/* You can add custom styles here if needed */
+<style scoped>
+/* Add any custom styles here */
 </style>

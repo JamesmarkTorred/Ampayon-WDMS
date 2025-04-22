@@ -94,11 +94,11 @@ const formatTime = (timeString) => {
 
 // Navigation
 const goToShow = (id) => {
-  router.push(`/dailylog/${id}`)
+  router.push({ name: 'show-log', params: { id } })
 }
 
 const goToEdit = (id) => {
-  router.push(`/dailylog/${id}/edit`)
+  router.push({ name: 'edit-log', params: { id } })
 }
 
 const confirmDelete = (id) => {
@@ -127,7 +127,10 @@ onMounted(() => {
 
 <template>
   <head>
-    <link  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      rel="stylesheet"
+    />
   </head>
   <div class="container mx-auto px-4 py-8">
     <div class="space-y-6">
@@ -153,7 +156,7 @@ onMounted(() => {
 
           <!-- Add New Button -->
           <router-link
-            to="/createlog"
+            :to="{ name: 'create-log' }"
             class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors shadow-sm"
           >
             <i class="fas fa-plus"></i>
@@ -192,7 +195,7 @@ onMounted(() => {
         <h3 class="text-lg font-medium text-gray-700">No logs found</h3>
         <p class="text-gray-500 mt-1">Create your first daily log to get started</p>
         <router-link
-          to="/createlog"
+          to="/logs/create"
           class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
           <i class="fas fa-plus mr-2"></i> Add New Log
@@ -384,7 +387,6 @@ onMounted(() => {
         <div
           class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
         >
-          
           <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="false"
             >&#8203;</span
           >

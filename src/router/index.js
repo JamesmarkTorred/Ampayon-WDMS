@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import HomeViewLayout from '@/components/HomeViewLayout.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
@@ -12,7 +11,10 @@ import DailyLogs from '@/views/dashboard/dailylogs/DailyLogs.vue'
 import CreateLogs from '@/views/dashboard/dailylogs/CreateLogs.vue'
 import { supabase } from '@/supabase'
 import ShowLog from '@/views/dashboard/dailylogs/ShowLog.vue'
+import EditLog from '@/views/dashboard/dailylogs/EditLog.vue' // Add this import
 import VerifyEmail from '@/views/auth/VerifyEmail.vue'
+import ResetPassword from '@/views/auth/ResetPassword.vue'
+import Unauthorized from '@/views/Unauthorized.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,7 +33,7 @@ const router = createRouter({
           component: HomeContent,
         },
         {
-          path: '/about', // no leading slash for child routes
+          path: '/about',
           name: 'about',
           component: HomeAbout,
         },
@@ -39,79 +41,117 @@ const router = createRouter({
           path: '/login',
           name: 'login',
           component: Login,
+          meta: { requiresAuth: false }
         },
         {
           path: '/register',
           name: 'register',
           component: Register,
+          meta: { requiresAuth: false }
         },
         {
           path: '/forgot-password',
           name: 'forgotPassword',
           component: ForgotPassword,
+          meta: { requiresAuth: false }
         },
         {
           path: '/verify-email',
           name: 'verifyEmail',
           component: VerifyEmail,
+          meta: { requiresAuth: false }
+        },
+        {
+          path: '/reset-password',
+          name: 'resetPassword',
+          component: ResetPassword,
+          meta: { requiresAuth: false }
         },
       ],
     },
-
     {
       path: '/dashboard',
       component: DashboardLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
           name: 'dashboard',
           component: DashboardView,
+          meta: { requiresAuth: true }
         },
+        // Updated log routes to follow RESTful conventions
         {
-          path: '/dailylog',
-          name: 'dailylog',
+          path: '/logs',
+          name: 'logs',
           component: DailyLogs,
+          meta: { requiresAuth: true }
         },
         {
-          path: '/createlog',
-          name: 'createlog',
+          path: '/logs/create',
+          name: 'create-log',
           component: CreateLogs,
+          meta: { requiresAuth: true }
         },
         {
-          path: '/showlog',
-          name: 'showlog',
+          path: '/logs/:id',
+          name: 'show-log',
           component: ShowLog,
+          meta: { requiresAuth: true },
+          props: true // Pass route params as props
+        },
+        {
+          path: '/logs/:id/edit',
+          name: 'edit-log',
+          component: EditLog,
+          meta: { requiresAuth: true },
+          props: true // Pass route params as props
         },
       ],
     },
+    {
+      path: '/unauthorized',
+      name: 'unauthorized',
+      component: Unauthorized
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/home'
+    }
   ],
 })
 
 router.beforeEach(async (to) => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-  const allowedRoles = to.meta.roles || []
-
+  // Get current user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // Check if route requires authentication
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  
+  // If route is protected and no user is logged in
   if (requiresAuth && !user) {
-    return '/login'
+    return {
+      path: '/login',
+      query: { redirect: to.fullPath }
+    }
   }
-
-  if (requiresAuth && user && allowedRoles.length > 0) {
+  
+  // If user is logged in but tries to access auth pages
+  if ((to.path === '/login' || to.path === '/register') && user) {
+    return '/dashboard'
+  }
+  
+  // Optional: Check for specific roles if needed
+  if (to.meta.roles) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
-
-    if (!allowedRoles.includes(profile?.role)) {
+      
+    if (!to.meta.roles.includes(profile?.role)) {
       return '/unauthorized'
     }
-  }
-
-  if ((to.path === '/login' || to.path === '/register') && user) {
-    return '/dashboard'
   }
 })
 
