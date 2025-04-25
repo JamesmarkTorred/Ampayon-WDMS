@@ -16,6 +16,14 @@
           <span>{{ formatDate(log.date) }}</span>
         </div>
         <div class="flex justify-between">
+          <span class="font-semibold text-gray-700">Driver:</span>
+          <span>{{ log.driver_name }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold text-gray-700">OTP</span>
+          <span>{{log.driver_otp }}</span>
+        </div>
+        <div class="flex justify-between">
           <span class="font-semibold text-gray-700">Plate Number:</span>
           <span>{{ log.plate_number }}</span>
         </div>
@@ -25,7 +33,15 @@
         </div>
         <div class="flex justify-between">
           <span class="font-semibold text-gray-700">Commodity:</span>
-          <span>{{ log.commodity }}</span>
+          <span>{{ log.commodity_carried }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold text-gray-700">Origin:</span>
+          <span>{{ log.origin }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold text-gray-700">Destination:</span>
+          <span>{{ log.destination }}</span>
         </div>
         <div class="flex justify-between">
           <span class="font-semibold text-gray-700">Total Weight:</span>

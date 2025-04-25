@@ -37,10 +37,10 @@ const validateForm = () => {
     errors.value.email = 'Please enter a valid email address'
   }
 
-  // Role validation
+  /* Role validation
   if (!form.value.role) {
     errors.value.role = 'Please select a role'
-  }
+  }*/
 
   // Password validation
   if (!form.value.password) {
@@ -88,19 +88,34 @@ const handleRegister = async () => {
   errors.value.apiError = ''
 
   try {
+    // 1. Auth signup
     const { data, error } = await supabase.auth.signUp({
       email: form.value.email,
       password: form.value.password,
       options: {
         data: {
+          // This goes to auth.users metadata
           full_name: form.value.name,
-          role: form.value.role
-        }
-      }
+          role: form.value.role,
+        },
+      },
     })
 
     if (error) throw error
 
+    // 2. Create profile (if user created successfully)
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: data.user.id, // Critical link
+        full_name: form.value.name,
+        email: form.value.email,
+        role: form.value.role,
+      })
+
+      if (profileError) throw profileError
+    }
+
+    // 3. Handle email verification
     if (data.user?.identities?.length === 0) {
       throw new Error('Email already registered')
     }
@@ -108,7 +123,7 @@ const handleRegister = async () => {
     if (data.user && !data.user.confirmed_at) {
       router.push({
         path: '/verify-email',
-        query: { email: form.value.email }
+        query: { email: form.value.email },
       })
     } else {
       router.push('/dashboard')

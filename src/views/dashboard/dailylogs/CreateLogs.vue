@@ -221,7 +221,7 @@ const submitForm = async () => {
     if (error) throw error
 
     // Success - redirect to logs view
-    router.push('/dailylog')
+    router.push('/logs')
   } catch (error) {
     console.error('Submission error:', error)
     errors.value.push({
