@@ -16,6 +16,7 @@ import VerifyEmail from '@/views/auth/VerifyEmail.vue'
 import ResetPassword from '@/views/auth/ResetPassword.vue'
 import Unauthorized from '@/views/Unauthorized.vue'
 import Profile from '@/views/profile/Profile.vue'
+import User from '@/views/dashboard/user/User.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -112,6 +113,13 @@ const router = createRouter({
           path: '/profile',
           name: 'profile',
           component: Profile,
+          meta: { requiresAuth: true},
+          props: true
+        },
+        {
+          path: '/user',
+          name: 'user',
+          component: User,
           meta: { requiresAuth: true},
           props: true
         },

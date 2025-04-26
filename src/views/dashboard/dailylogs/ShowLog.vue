@@ -53,6 +53,10 @@
             {{ log.overloaded ? 'YES' : 'NO' }}
           </span>
         </div>
+        <div class="flex justify-between">
+          <span class="font-semibold text-gray-700">Created by:</span>
+          <span>{{ log.created_by }} </span>
+        </div>
       </div>
 
       <div class="mt-6 text-center">
@@ -160,6 +164,8 @@ const fetchLog = async () => {
     loading.value = false
   }
 }
+
+
 
 const goBack = () => {
   router.push('/logs')

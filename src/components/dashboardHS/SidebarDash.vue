@@ -127,7 +127,7 @@ const handleLogout = async () => {
           :aria-expanded="activeTab === 'manage'"
         >
           <i class="ri-group-line mr-3 text-lg"></i>
-          <span class="text-sm">Manage</span>
+          <span class="text-sm">Users</span>
           <i
             class="ri-arrow-right-s-line ml-auto transition-transform duration-200"
             :class="{ 'rotate-90': activeTab === 'manage' }"
@@ -140,22 +140,14 @@ const handleLogout = async () => {
         >
           <li class="mb-4">
             <router-link
-              to="/manage/users"
+              to="/user"
               class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
               @click="setActiveTab('manage')"
             >
-              Manage User
+             All users
             </router-link>
           </li>
-          <li class="mb-4">
-            <router-link
-              to="/manage/roles"
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('manage')"
-            >
-              Manage Role
-            </router-link>
-          </li>
+          
         </ul>
       </li>
 
