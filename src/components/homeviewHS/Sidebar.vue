@@ -8,15 +8,9 @@ const props = defineProps({
 });
 
 const activeTab = ref('home');
-const openDropdown = ref(null);
 
 const setActiveTab = (tab) => {
   activeTab.value = tab;
-  openDropdown.value = null; // Close any open dropdowns
-};
-
-const toggleDropdown = (dropdownName) => {
-  openDropdown.value = openDropdown.value === dropdownName ? null : dropdownName;
 };
 
 const handleLogout = () => {
@@ -26,78 +20,93 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <div class="fixed left-0 top-0 w-64 h-full bg-gray-900 p-4 z-50 sidebar-menu transition-transform"
-       :class="{ '-translate-x-full': !isOpen }">
-    <router-link 
-      to="/home" 
-      class="flex items-center pb-4 border-b border-b-gray-800"
-      @click="setActiveTab('home')"
-    >
-      <img src="@/assets/logo.png" alt="Logo" class="w-8 h-8 rounded object-cover">
-      <span class="text-lg font-bold text-white ml-3">DPWH</span>
-    </router-link>
-    
-    <ul class="mt-4">
-      <!-- Home -->
-      <li class="mb-1 group" :class="{ 'active': activeTab === 'home' }">
-        <router-link 
-          to="/home" 
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md group-[.active]:bg-gray-800 group-[.active]:text-white"
-          @click="setActiveTab('home')"
-        >
-          <i class="ri-home-2-line mr-3 text-lg"></i>
-          <span class="text-sm">Home</span>
-        </router-link>
-      </li>
+  <aside
+    class="fixed left-0 top-0 w-64 h-full bg-gray-900 p-4 z-50 flex flex-col transition-transform duration-300 ease-in-out"
+    :class="{ '-translate-x-full': !isOpen }"
+    aria-label="Main navigation"
+  >
+    <!-- Brand/Logo Section -->
+    <div class="pb-4 border-b border-gray-800">
+      <router-link
+        to="/home"
+        class="flex items-center group"
+        @click="setActiveTab('home')"
+        aria-label="Home"
+      >
+        <img 
+          src="@/assets/logo.png" 
+          alt="DPWH Logo" 
+          class="w-8 h-8 rounded object-cover transition-transform group-hover:scale-105"
+        />
+        <span class="text-lg font-bold text-white ml-3">DPWH Portal</span>
+      </router-link>
+    </div>
 
-      <!-- About -->
-      <li class="mb-1 group" :class="{ 'active': activeTab === 'about' }">
-        <router-link 
-          to="/about" 
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md group-[.active]:bg-gray-800 group-[.active]:text-white"
-          @click="setActiveTab('about')"
-        >
-          <i class="ri-information-line mr-3 text-lg"></i>
-          <span class="text-sm">About</span>
-        </router-link>
-      </li>
+    <!-- Navigation Menu -->
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul class="space-y-1">
+        <!-- Home -->
+        <li>
+          <router-link
+            to="/home"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'home' }"
+            @click="setActiveTab('home')"
+          >
+            <i class="ri-home-2-line mr-3 text-lg"></i>
+            <span>Home</span>
+            <span 
+              v-if="activeTab === 'home'"
+              class="ml-auto w-1.5 h-1.5 bg-blue-500 rounded-full"
+              aria-hidden="true"
+            ></span>
+          </router-link>
+        </li>
 
-      <!-- Auth Dropdown -->
-      <li class="mb-1 group">
-        <a 
-          href="#" 
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md"
-          @click.prevent="toggleDropdown('auth')"
-          :aria-expanded="openDropdown === 'auth'"
-        >
-          <i class="ri-user-line mr-3 text-lg"></i>
-          <span class="text-sm">Authentication</span>
-          <i 
-            class="ri-arrow-right-s-line ml-auto transition-transform duration-200"
-            :class="{ 'rotate-90': openDropdown === 'auth' }"
-          ></i>
-        </a>
-        <ul class="pl-7 mt-2" v-show="openDropdown === 'auth'">
-          <li class="mb-1">
-            <router-link 
-              to="/login" 
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('auth')"
-            >
-              Login
-            </router-link>
-          </li>
-          <li class="mb-1">
-            <router-link 
-              to="/register" 
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('auth')"
-            >
-              Register
-            </router-link>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </div>
+        <!-- About -->
+        <li>
+          <router-link
+            to="/about"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'about' }"
+            @click="setActiveTab('about')"
+          >
+            <i class="ri-information-line mr-3 text-lg"></i>
+            <span>About</span>
+          </router-link>
+        </li>
+
+        <!-- Authentication Section -->
+        <li class="pt-2 mt-2 border-t border-gray-800">
+          <router-link
+            to="/login"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'login' }"
+            @click="setActiveTab('login')"
+          >
+            <i class="ri-login-box-line mr-3 text-lg"></i>
+            <span>Login</span>
+          </router-link>
+        </li>
+
+        <li>
+          <router-link
+            to="/register"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'register' }"
+            @click="setActiveTab('register')"
+          >
+            <i class="ri-user-add-line mr-3 text-lg"></i>
+            <span>Register</span>
+          </router-link>
+        </li>
+      </ul>
+    </nav>
+
+   
+  </aside>
 </template>
+
+<style scoped>
+
+</style>

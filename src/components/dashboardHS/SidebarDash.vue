@@ -8,17 +8,12 @@ const props = defineProps({
   isOpen: Boolean,
 })
 
-// Add user reference if needed (or remove the user.value line)
 const user = ref(null)
-const activeTab = ref('home')
+const activeTab = ref('dashboard')
 const isLoggingOut = ref(false)
 
 const setActiveTab = (tab) => {
   activeTab.value = tab
-}
-
-const toggleDropdown = (tab) => {
-  activeTab.value = activeTab.value === tab ? null : tab
 }
 
 const handleLogout = async () => {
@@ -26,15 +21,10 @@ const handleLogout = async () => {
   try {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
-    
-    // Clear user state if you're using it
     user.value = null
-    
-    // Redirect to login
     router.push('/login')
   } catch (error) {
     console.error('Logout error:', error)
-    // Consider adding user feedback here (e.g., toast notification)
   } finally {
     isLoggingOut.value = false
   }
@@ -42,133 +32,137 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div
-    class="fixed left-0 top-0 w-64 h-full bg-gray-900 p-4 z-50 sidebar-menu transition-transform"
+  <aside
+    class="fixed left-0 top-0 w-64 h-full bg-gray-900 p-4 z-50 flex flex-col transition-all duration-300 ease-in-out shadow-xl"
     :class="{ '-translate-x-full': !isOpen }"
+    aria-label="Main navigation"
   >
-    <router-link
-      to="/dashboard"
-      class="flex items-center pb-4 border-b border-b-gray-800"
-      @click="setActiveTab('home')"
-    >
-      <img src="@/assets/logo.png" alt="DPWH Logo" class="w-8 h-8 rounded object-cover" />
-      <span class="text-lg font-bold text-white ml-3">DPWH</span>
-    </router-link>
+    <!-- Brand/Logo Section -->
+    <div class="pb-4 border-b border-gray-800">
+      <router-link
+        to="/dashboard"
+        class="flex items-center group"
+        @click="setActiveTab('dashboard')"
+        aria-label="Dashboard"
+      >
+        <img 
+          src="@/assets/logo.png" 
+          alt="DPWH Logo" 
+          class="w-8 h-8 rounded object-cover transition-transform group-hover:scale-105"
+        />
+        <span class="text-lg font-bold text-white ml-3">DPWH Portal</span>
+      </router-link>
+    </div>
 
-    <ul class="mt-4">
-      <!-- Dashboard -->
-      <li class="mb-1 group" :class="{ active: activeTab === 'dashboard' }">
-        <router-link
-          to="/dashboard"
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md group-[.active]:bg-gray-800 group-[.active]:text-white"
-          @click="setActiveTab('dashboard')"
-        >
-          <i class="ri-dashboard-2-line mr-3 text-lg"></i>
-          <span class="text-sm">Dashboard</span>
-        </router-link>
-      </li>
+    <!-- Navigation Menu -->
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul class="space-y-1">
+        <!-- Dashboard -->
+        <li>
+          <router-link
+            to="/dashboard"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'dashboard' }"
+            @click="setActiveTab('dashboard')"
+          >
+            <i class="ri-dashboard-2-line mr-3 text-lg"></i>
+            <span>Dashboard</span>
+            <span 
+              v-if="activeTab === 'dashboard'"
+              class="ml-auto w-1.5 h-1.5 bg-blue-500 rounded-full"
+              aria-hidden="true"
+            ></span>
+          </router-link>
+        </li>
 
-      <!-- Function Dropdown -->
-      <li class="mb-1 group" :class="{ active: activeTab === 'function' }">
-        <a
-          href="#"
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md group-[.active]:bg-gray-800 group-[.active]:text-white"
-          @click.prevent="toggleDropdown('function')"
-          :aria-expanded="activeTab === 'function'"
-        >
-          <i class="ri-instance-line mr-3 text-lg"></i>
-          <span class="text-sm">Function</span>
-          <i
-            class="ri-arrow-right-s-line ml-auto transition-transform duration-200"
-            :class="{ 'rotate-90': activeTab === 'function' }"
-          ></i>
-        </a>
-        <ul 
-          class="pl-7 mt-2" 
-          v-show="activeTab === 'function'"
-          aria-hidden="activeTab !== 'function'"
-        >
-          <li class="mb-4">
-            <router-link
-              to="/logs"
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('function')"
-            >
-              Logs
-            </router-link>
-          </li>
-          <li class="mb-4">
-            <router-link
-              to="/violations"
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('function')"
-            >
-              Violation Tracking
-            </router-link>
-          </li>
-          <li class="mb-4">
-            <router-link
-              to="/reports"
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('function')"
-            >
-              Report
-            </router-link>
-          </li>
-        </ul>
-      </li>
+        <!-- Logs Management -->
+        <li>
+          <router-link
+            to="/logs"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'logs' }"
+            @click="setActiveTab('logs')"
+          >
+            <i class="ri-file-list-line mr-3 text-lg"></i>
+            <span>Logs Management</span>
+          </router-link>
+        </li>
 
-      <!-- Manage Dropdown -->
-      <li class="mb-1 group" :class="{ active: activeTab === 'manage' }">
-        <a
-          href="#"
-          class="flex items-center py-2 px-4 text-gray-300 hover:bg-gray-950 hover:text-gray-100 rounded-md group-[.active]:bg-gray-800 group-[.active]:text-white"
-          @click.prevent="toggleDropdown('manage')"
-          :aria-expanded="activeTab === 'manage'"
-        >
-          <i class="ri-group-line mr-3 text-lg"></i>
-          <span class="text-sm">Users</span>
-          <i
-            class="ri-arrow-right-s-line ml-auto transition-transform duration-200"
-            :class="{ 'rotate-90': activeTab === 'manage' }"
-          ></i>
-        </a>
-        <ul 
-          class="pl-7 mt-2" 
-          v-show="activeTab === 'manage'"
-          aria-hidden="activeTab !== 'manage'"
-        >
-          <li class="mb-4">
-            <router-link
-              to="/user"
-              class="text-gray-300 text-sm flex items-center hover:text-gray-100 before:contents-[''] before:w-1 before:h-1 before:rounded-full before:bg-gray-300 before:mr-3"
-              @click="setActiveTab('manage')"
-            >
-             All users
-            </router-link>
-          </li>
-          
-        </ul>
-      </li>
+        <!-- Violation Tracking -->
+        <li>
+          <router-link
+            to="/violations"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'violations' }"
+            @click="setActiveTab('violations')"
+          >
+            <i class="ri-alert-line mr-3 text-lg"></i>
+            <span>Violation Tracking</span>
+          </router-link>
+        </li>
 
-      <!-- Logout -->
-      <li class="mb-1 group mt-auto pt-4 border-t border-gray-800">
-        <button
-          type="button"
-          class="w-full flex items-center py-2 px-4 text-gray-300 hover:bg-red-900/50 hover:text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="handleLogout"
-          :disabled="isLoggingOut"
-          :aria-busy="isLoggingOut"
-        >
-          <i
-            class="ri-logout-box-r-line mr-3 text-lg"
-            :class="{ 'animate-spin': isLoggingOut }"
-          ></i>
-          <span class="text-sm">
-            {{ isLoggingOut ? 'Logging out...' : 'Logout' }}
-          </span>
-        </button>
-      </li>
-    </ul>
-  </div>
+        <!-- Reports -->
+        <li>
+          <router-link
+            to="/reports"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'reports' }"
+            @click="setActiveTab('reports')"
+          >
+            <i class="ri-file-chart-line mr-3 text-lg"></i>
+            <span>Reports</span>
+          </router-link>
+        </li>
+
+        <!-- User Management -->
+        <li class="pt-2 mt-2 border-t border-gray-800">
+          <router-link
+            to="/user"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'users' }"
+            @click="setActiveTab('users')"
+          >
+            <i class="ri-user-settings-line mr-3 text-lg"></i>
+            <span>User Management</span>
+          </router-link>
+        </li>
+
+        <!-- Roles & Permissions -->
+        <li>
+          <router-link
+            to="/roles"
+            class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-all"
+            :class="{ 'bg-gray-800 text-white': activeTab === 'roles' }"
+            @click="setActiveTab('roles')"
+          >
+            <i class="ri-shield-user-line mr-3 text-lg"></i>
+            <span>Roles & Permissions</span>
+          </router-link>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Logout Section -->
+    <div class="mt-auto pt-4 border-t border-gray-800">
+      <button
+        type="button"
+        class="w-full flex items-center justify-center py-3 px-4 text-gray-300 hover:bg-red-900/30 hover:text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="handleLogout"
+        :disabled="isLoggingOut"
+        :aria-busy="isLoggingOut"
+      >
+        <i
+          class="ri-logout-box-r-line mr-3 text-lg transition-all"
+          :class="{ 'animate-spin': isLoggingOut }"
+        ></i>
+        <span>
+          {{ isLoggingOut ? 'Signing out...' : 'Sign Out' }}
+        </span>
+      </button>
+    </div>
+  </aside>
 </template>
+
+<style scoped>
+
+</style>
